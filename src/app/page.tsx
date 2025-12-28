@@ -1,0 +1,201 @@
+"use client";
+
+import RootElement from "@/components/RootElement";
+import { useEffect, useState } from "react";
+import { Figtree } from "next/font/google";
+
+const figtree = Figtree({
+  weight: ["600"],
+  subsets: ["latin"],
+});
+
+export default function Home() {
+  // 2025 theme
+  const theme = {
+    progress_foreground: "#00a8ff",
+    progress_background: "#e3e3ef",
+  };
+
+
+  const [year, setYear] = useState<number>();
+  const [percent, setPercent] = useState<string>("");
+  const [isEnded, setIsEnded] = useState<boolean>(false);
+  const [showNextYearButton, setShowNextYearButton] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isEnded) {
+      return;
+    }
+
+    const decimal_digits = 6;
+    const update_date_interval_time = 50;
+
+    let isUpdating = false;
+    let old_year = new Date().getFullYear();
+
+    const update = () => {
+      if (isUpdating) {
+        return;
+      }
+      isUpdating = true;
+
+      const now_date = new Date();
+      if (
+        old_year < now_date.getFullYear() ||
+        (now_date.getMonth() == 0 &&
+          now_date.getDate() == 1 &&
+          now_date.getHours() == 0 &&
+          now_date.getMinutes() == 0 &&
+          (now_date.getSeconds() == 0 || now_date.getSeconds() == 1)) ||
+        (window as { [key: string]: any }).testNewYear
+      ) {
+        clearInterval(interval);
+
+        setYear(now_date.getFullYear() - 1);
+        setPercent("100");
+
+        setTimeout(() => {
+          setShowNextYearButton(true);
+        }, 3000);
+
+        setIsEnded(true);
+      } else {
+        const now_year = now_date.getFullYear();
+
+        const next_year_timestamp = new Date(
+          now_year + 1,
+          1 - 1,
+          1,
+          0,
+          0,
+          0
+        ).getTime();
+        const now_year_timestamp = new Date(
+          now_year,
+          1 - 1,
+          1,
+          0,
+          0,
+          0
+        ).getTime();
+
+        const oneyear_time = next_year_timestamp - now_year_timestamp;
+        const until_next_year_time = next_year_timestamp - now_date.getTime();
+
+        const p = 100 - (until_next_year_time / oneyear_time) * 100;
+
+        setYear(now_year);
+        setPercent(
+          (Math.floor(p * 10 ** decimal_digits) / 10 ** decimal_digits).toFixed(
+            decimal_digits
+          )
+        );
+      }
+
+      old_year = now_date.getFullYear();
+      isUpdating = false;
+    };
+
+    const interval = setInterval(update, update_date_interval_time);
+
+    update();
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isEnded]);
+
+  const startNextYear = () => {
+    setShowNextYearButton(false);
+    setIsEnded(false);
+  };
+
+  return (
+    <RootElement>
+      <div className="w-full h-full flex flex-col justify-center items-center gap-6 text-center">
+        <h1 data-name="Title" className="text-[50px] font-bold">
+          <span
+            className="text-[18px] font-bold"
+            style={{
+              color: theme.progress_background,
+              marginRight: "16px",
+              opacity: 0.4,
+            }}
+          >
+            {year ? year - 1 + " >>" : ""}
+          </span>
+          <span
+            className="rounded-md"
+            style={{
+              padding: "8px 24px",
+              color: theme.progress_foreground,
+              backgroundColor: theme.progress_background,
+            }}
+          >
+            {year || ""}
+          </span>
+          <span
+            className="text-[24px] font-bold"
+            style={{
+              color: theme.progress_background,
+              marginLeft: "16px",
+              opacity: 0.8,
+            }}
+          >
+            {year ? ">> " + (year + 1) : ""}
+          </span>
+        </h1>
+
+        <div
+          data-name="Progress Bar"
+          className="w-full max-w-2xl h-16 rounded-md flex justify-center items-center"
+          style={{
+            background: `linear-gradient(to right,
+              ${theme.progress_foreground} 0%, ${theme.progress_foreground} ${percent}%,
+              ${theme.progress_background} ${percent}%, ${theme.progress_background} 100%
+            )`,
+          }}
+        >
+          <span
+            style={{
+              color: theme.progress_background,
+              opacity: 0.3,
+            }}
+          >
+            w u h a n . t o d a y
+          </span>
+        </div>
+
+        <div
+          data-name="Message"
+          className={`text-[25px] font-semibold ${figtree.className} tabular-nums`}
+          style={{
+            color: theme.progress_background,
+          }}
+        >
+          is{" "}
+          <span
+            className="rounded-md text-[30px]"
+            style={{
+              padding: "8px",
+              color: theme.progress_foreground,
+              backgroundColor: theme.progress_background,
+            }}
+          >
+            {percent}%
+          </span>{" "}
+          complete{percent === "100" ? "!" : "."}
+        </div>
+
+        <input
+          data-name="Go to next year button"
+          className={`invisible p-2 rounded-xl`}
+          style={{ backgroundColor: "rgba(128, 128, 128, 0.6)" }}
+          type="button"
+          value="Show next year's progress bar"
+          onClick={startNextYear}
+        ></input>
+      </div>
+    </RootElement>
+  );
+}
