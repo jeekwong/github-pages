@@ -1,2 +1,3 @@
-# Year Progress Bar
-<img src="./screenshot.webp"></img>
+# log
+
+### 2025-12-28 12:29:38
